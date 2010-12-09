@@ -2,7 +2,7 @@
 /**
  * A class for reading Microsoft Excel (97/2003) Spreadsheets.
  *
- * Version 2.2
+ * Version 2.21
  *
  * Enhanced and maintained by Matt Kruse < http://mattkruse.com >
  * Maintained at http://code.google.com/p/php-excel-reader/
@@ -76,9 +76,18 @@ function GetInt4d($data, $pos) {
 // http://uk.php.net/manual/en/function.getdate.php
 function gmgetdate($ts = null){
 	$k = array('seconds','minutes','hours','mday','wday','mon','year','yday','weekday','month',0);
-	return(array_combine($k,split(":",gmdate('s:i:G:j:w:n:Y:z:l:F:U',is_null($ts)?time():$ts))));
+	return(array_comb($k,split(":",gmdate('s:i:G:j:w:n:Y:z:l:F:U',is_null($ts)?time():$ts))));
 	} 
-	
+
+// Added for PHP4 compatibility
+function array_comb($array1, $array2) {
+	$out = array();
+	foreach ($array1 as $key => $value) {
+		$out[$value] = $array2[$key];
+	}
+	return $out;
+}
+
 function v($data,$pos) {
 	return ord($data[$pos]) | ord($data[$pos+1])<<8;
 }
@@ -826,7 +835,9 @@ class Spreadsheet_Excel_Reader {
 	function _format_value($format,$num,$f) {
 		// 49==TEXT format
 		// http://code.google.com/p/php-excel-reader/issues/detail?id=7
-		if ( (!$f && $format=="%s") || ($f==49) || ($format=="GENERAL") ) { return array('string'=>$num); }
+		if ( (!$f && $format=="%s") || ($f==49) || ($format=="GENERAL") ) { 
+			return array('string'=>$num, 'formatColor'=>null); 
+		}
 
 		// Custom pattern can be POSITIVE;NEGATIVE;ZERO
 		// The "text" option as 4th parameter is not handled
@@ -843,6 +854,7 @@ class Spreadsheet_Excel_Reader {
 		}
 
 		$color = "";
+		$matches = array();
 		$color_regex = "/^\[(BLACK|BLUE|CYAN|GREEN|MAGENTA|RED|WHITE|YELLOW)\]/i";
 		if (preg_match($color_regex,$pattern,$matches)) {
 			$color = strtolower($matches[1]);
@@ -1589,6 +1601,7 @@ class Spreadsheet_Excel_Reader {
 
 			$format = $xfrecord['format'];
 			$formatIndex = $xfrecord['formatIndex'];
+			$fontIndex = $xfrecord['fontIndex'];
 			$formatColor = "";
 			$rectype = '';
 			$string = '';
